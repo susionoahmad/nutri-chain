@@ -1,7 +1,14 @@
 import axios from 'axios';
 
+let baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+// Auto-append /api jika user lupa memasukkannya di environment variable
+if (baseUrl && !baseUrl.endsWith('/api')) {
+    // Remove trailing slash if exists before appending /api
+    baseUrl = baseUrl.replace(/\/$/, '') + '/api';
+}
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+    baseURL: baseUrl,
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
