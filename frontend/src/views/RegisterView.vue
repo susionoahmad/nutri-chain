@@ -95,11 +95,12 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted, computed, ref, watch } from 'vue';
+import { reactive, onMounted, computed, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 
+const route = useRoute();
 const router = useRouter();
 const toast = useToast();
 const loading = ref(false);

@@ -45,8 +45,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onMounted } from 'vue';
-import { useOrderStore } from '@/stores/orderStore';
+import { ref, computed, onMounted } from 'vue';
+import { useOrderStore } from '@/stores/order';
 import { useI18n } from 'vue-i18n';
 import { useToast } from 'vue-toastification';
 

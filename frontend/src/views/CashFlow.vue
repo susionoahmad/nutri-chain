@@ -2,7 +2,6 @@
 import { ref, onMounted, reactive } from 'vue';
 import api from '@/api';
 import { useAuthStore } from '@/stores/auth';
-import { useI18n } from 'vue-i18n';
 import { 
     Wallet, ArrowUpRight, ArrowDownLeft, 
     Calendar, TrendingUp, TrendingDown, Landmark, 
@@ -13,7 +12,6 @@ import { format } from 'date-fns';
 import { useToast } from 'vue-toastification';
 
 const auth = useAuthStore();
-const { t } = useI18n();
 const toast = useToast();
 const loading = ref(true);
 const saving = ref(false);
