@@ -1,0 +1,270 @@
+Tolong perbaiki dengan alur workflow berbasis role.
+
+# 🧠 ROLE USER
+
+Gunakan role berikut:
+
+1. owner
+2. admin
+3. warehouse
+4. driver
+5. customer
+
+---
+
+# 🔄 ALUR SISTEM BERDASARKAN ROLE
+
+## 1. CUSTOMER (SPPG / Dapur)
+
+Flow:
+
+* Login
+* Melihat produk
+* Membuat order
+
+Aksi:
+
+* Create order
+
+Tabel yang diakses:
+
+* products (read)
+* customers (read)
+* orders (create)
+* order_items (create)
+
+Status:
+
+* order dibuat dengan status "pending"
+
+---
+
+## 2. ADMIN (Operasional)
+
+Flow:
+
+* Melihat order pending
+* Validasi order
+* Konfirmasi order
+
+Aksi:
+
+* Update status order
+
+Tabel yang diakses:
+
+* orders (read, update)
+* order_items (read)
+* stocks (read)
+
+Logic:
+
+* Jika stok cukup → ubah status ke "confirmed"
+* Saat confirmed:
+  → Kurangi stok di tabel stocks
+
+---
+
+## 3. WAREHOUSE (Gudang)
+
+Flow:
+
+* Melihat order confirmed
+* Picking barang
+* Menyiapkan pengiriman
+
+Aksi:
+
+* Update status order
+
+Tabel yang diakses:
+
+* orders (read, update)
+* order_items (read)
+* stocks (read)
+
+Status:
+
+* Update ke "on_delivery"
+
+---
+
+## 4. DRIVER (Kurir)
+
+Flow:
+
+* Melihat order on_delivery
+* Mengirim barang
+* Konfirmasi selesai
+
+Aksi:
+
+* Update status
+
+Tabel yang diakses:
+
+* orders (read, update)
+* deliveries (update/create)
+
+Status:
+
+* Update ke "delivered"
+
+Logic:
+
+* Saat status delivered:
+  → Generate invoice otomatis
+
+---
+
+## 5. OWNER (Pemilik)
+
+Flow:
+
+* Melihat dashboard
+* Melihat laporan profit
+
+Aksi:
+
+* Read data
+
+Tabel yang diakses:
+
+* invoices (read)
+* orders (read)
+* order_items (read)
+* products (read)
+
+---
+
+# 🧱 STRUKTUR DATABASE
+
+Gunakan tabel berikut:
+
+suppliers
+
+* id
+* name
+* email
+* password
+
+users
+
+* id
+* supplier_id
+* name
+* email
+* password
+* role (owner, admin, warehouse, driver, customer)
+
+products
+
+* id
+* supplier_id
+* name
+* unit
+* cost_price
+* price
+
+stocks
+
+* id
+* product_id
+* qty
+
+customers
+
+* id
+* supplier_id
+* name
+* address
+* phone
+
+orders
+
+* id
+* supplier_id
+* customer_id
+* status (pending, confirmed, on_delivery, delivered)
+* order_date
+
+order_items
+
+* id
+* order_id
+* product_id
+* qty
+* price
+* cost_price
+
+deliveries
+
+* id
+* order_id
+* status
+* delivered_at
+
+invoices
+
+* id
+* order_id
+* total
+* total_cost
+* total_profit
+* status (unpaid, paid)
+* due_date
+
+---
+
+# ⚙️ LOGIC BISNIS WAJIB
+
+1. Saat order dibuat:
+
+   * Status = pending
+   * Simpan price & cost_price ke order_items
+
+2. Saat admin konfirmasi:
+
+   * Validasi stok cukup
+   * Kurangi stok dari tabel stocks
+   * Status = confirmed
+
+3. Saat warehouse proses:
+
+   * Status = on_delivery
+
+4. Saat driver selesai:
+
+   * Status = delivered
+   * Generate invoice otomatis
+
+5. Perhitungan invoice:
+
+   * total = sum(qty × price)
+   * total_cost = sum(qty × cost_price)
+   * total_profit = total - total_cost
+
+---
+
+# 🔐 RULE AKSES DATA
+
+* Semua query harus filter berdasarkan supplier_id
+* Customer hanya bisa melihat data miliknya sendiri
+* Warehouse tidak boleh melihat cost_price
+* Driver tidak boleh melihat harga
+* Owner bisa melihat semua termasuk profit
+
+---
+
+# 🎯 OUTPUT YANG DIMINTA
+
+Buatkan:
+
+1. Diagram alur per role
+2. API endpoint sesuai role
+3. Controller logic Laravel
+4. Middleware role-based access
+5. Contoh response API
+6. Struktur frontend store (Pinia)
+
+Pastikan sistem mengikuti alur workflow di atas dan siap untuk dikembangkan menjadi SaaS production.

@@ -1,0 +1,330 @@
+
+Buatkan aplikasi SaaS siap produksi untuk "Sistem Supplier SPPG (Manajemen Supply Bahan Makanan)".
+
+Gunakan stack:
+
+* Frontend: Vue 3 + TypeScript + Vite + Pinia + Axios
+* Backend: Laravel (API only) + Sanctum Authentication
+* Database: MySQL
+* Arsitektur: Multi-tenant (setiap supplier dipisahkan dengan supplier_id)
+
+---
+
+# 🧠 KONTEXT BISNIS
+
+Sistem digunakan oleh supplier bahan makanan untuk menyuplai dapur SPPG.
+
+Alur utama:
+
+1. Supplier mengelola produk & stok
+2. SPPG melakukan pemesanan
+3. Supplier konfirmasi pesanan
+4. Barang dikirim
+5. Sistem membuat invoice otomatis
+6. Sistem menghitung laba rugi
+7. Pembayaran dicatat
+
+---
+
+# 🧱 DESAIN DATABASE
+
+Buat migration:
+
+suppliers:
+
+* id
+* name
+* email
+* password
+
+customers:
+
+* id
+* supplier_id
+* name
+* address
+* phone
+
+products:
+
+* id
+* supplier_id
+* name
+* unit (kg, pcs, liter)
+* cost_price (HPP / harga beli)
+* price (harga jual)
+* stock
+
+orders:
+
+* id
+* supplier_id
+* customer_id
+* status (pending, confirmed, on_delivery, delivered)
+* order_date
+
+order_items:
+
+* id
+* order_id
+* product_id
+* qty
+* price (harga jual saat transaksi)
+* cost_price (HPP saat transaksi / snapshot)
+
+deliveries:
+
+* id
+* order_id
+* status
+* delivered_at
+
+invoices:
+
+* id
+* order_id
+* total
+* total_cost (total HPP)
+* total_profit (laba)
+* status (unpaid, paid)
+* due_date
+
+---
+
+# 🔐 AUTENTIKASI
+
+Gunakan Laravel Sanctum:
+
+* Register
+* Login
+* Logout
+* Proteksi semua route
+
+Setiap user terhubung ke supplier (multi-tenant).
+
+---
+
+# ⚙️ BACKEND (LARAVEL API)
+
+Gunakan:
+
+* Controllers
+* Services
+* Models
+
+Endpoint:
+
+Auth:
+POST /api/register
+POST /api/login
+POST /api/logout
+
+Produk:
+GET /api/products
+POST /api/products
+PUT /api/products/{id}
+DELETE /api/products/{id}
+
+Order:
+GET /api/orders
+POST /api/orders
+GET /api/orders/{id}
+
+Delivery:
+POST /api/deliveries/update-status
+
+Invoice:
+GET /api/invoices
+POST /api/invoices
+
+---
+
+# 🧠 LOGIC BISNIS
+
+1. Saat membuat order:
+
+   * Ambil price & cost_price dari products
+   * Simpan ke order_items (snapshot)
+
+2. Saat order dikonfirmasi:
+
+   * Kurangi stok produk
+
+3. Saat status "delivered":
+
+   * Generate invoice otomatis
+
+4. Perhitungan invoice:
+
+   * total = sum(qty × price)
+   * total_cost = sum(qty × cost_price)
+   * total_profit = total - total_cost
+
+5. Semua query WAJIB filter supplier_id
+
+---
+
+# 📊 FITUR LAPORAN
+
+Tambahkan endpoint:
+
+GET /api/reports/profit
+
+Output:
+
+* total penjualan
+* total HPP
+* total laba
+* laba per produk
+
+---
+
+# 🖥️ FRONTEND (VUE 3 + TS)
+
+Struktur:
+
+src/
+
+* api/axios.ts
+* stores/
+* views/
+* components/
+* router/
+
+Pinia store:
+
+* authStore
+* productStore
+* orderStore
+* invoiceStore
+* reportStore
+
+---
+
+# 🔄 STATE MANAGEMENT RULES
+
+* Semua data dari Pinia
+* Setelah POST/PUT → update state manual
+
+---
+
+# 📄 HALAMAN
+
+* Login
+* Dashboard (tampilkan revenue, cost, profit, grafik)
+* Produk
+* Order
+* Delivery
+* Invoice
+* Laporan (profit/loss)
+
+---
+
+# 🎯 UI
+
+* Table data
+* Form input
+* Badge status
+* Dashboard card:
+
+  * Total revenue
+  * Total cost
+  * Total profit
+
+---
+
+# 🚀 SIAP DEPLOY
+
+Backend:
+
+* Support Docker (untuk Google Cloud Run)
+
+Frontend:
+
+* Build dengan Vite (untuk Vercel)
+
+---
+
+# ⚠️ ATURAN
+
+* Tanpa Blade
+* Gunakan validasi
+* Gunakan clean code
+* Gunakan TypeScript dengan benar
+
+---
+
+# 📦 OUTPUT
+
+Tampilkan:
+
+1. Backend Laravel lengkap:
+
+   * Migration
+   * Model
+   * Controller
+   * Service
+   * Route
+
+2. Frontend Vue:
+
+   * Pages
+   * Stores
+   * Axios config
+
+3. Contoh API
+
+4. Cara setup
+
+Pastikan aplikasi bisa langsung dijalankan.
+
+Tambahkan sistem role user:
+
+Role:
+- Owner
+- Admin
+- Warehouse
+- Driver
+- Customer
+
+Rules:
+- Owner bisa melihat laporan profit
+- Admin tidak boleh melihat HPP
+- Warehouse hanya mengelola stok
+- Driver hanya mengupdate status pengiriman
+- Customer hanya bisa membuat order
+
+Gunakan role-based access control (RBAC)
+app/
+ ├── Policies/
+ ├── Roles/
+ ├── Middleware/
+
+Produk
+| Role      | Akses       |
+| --------- | ----------- |
+| Owner     | full akses  |
+| Admin     | tambah/edit |
+| Warehouse | lihat saja  |
+| Driver    | tidak bisa  |
+| Customer  | tidak bisa  |
+
+Laporan Profit
+| Role      | Akses       |
+| --------- | ----------- |
+| Owner     | boleh       |
+| Admin     | tidak boleh |
+| Warehouse | tidak boleh |
+| Driver    | tidak boleh |
+| Customer  | tidak boleh |
+
+Order
+| Role      | Akses            |
+| --------- | ---------------- |
+| Owner     | full             |
+| Admin     | full             |
+| Warehouse | update status    |
+| Driver    | update delivered |
+| Customer  | buat order       |
+
+
