@@ -79,7 +79,7 @@ const isQuantityExceedsStock = computed(() => {
 const checkStock = async () => {
   stockLoading.value = true;
   try {
-    const stockData = await orderStore.checkProductStock(props.product.id);
+    const stockData = await orderStore.checkStock(props.product.id);
     
     // Logika deteksi perubahan status stok: jika sebelumnya cukup, sekarang menjadi kurang
     const wasValid = availableStock.value === null || currentQuantity.value <= availableStock.value;
