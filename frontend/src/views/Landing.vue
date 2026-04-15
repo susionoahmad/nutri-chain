@@ -3,6 +3,13 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useI18n } from 'vue-i18n';
+import { 
+    ShoppingBag, Receipt, ShieldCheck, BarChart3, 
+    ChevronRight, Play, Globe, Check,
+    ArrowRight, Package, LayoutDashboard,
+    Instagram, Twitter, Linkedin, Github,
+    X
+} from 'lucide-vue-next';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -154,7 +161,7 @@ const { t, tm, rt, locale } = useI18n({
 });
 
 // Sync local language
-const currentLanguage = ref(localStorage.getItem('locale') || 'id');
+const currentLanguage = ref<"id" | "en">((localStorage.getItem('locale') as "id" | "en") || "id");
 locale.value = currentLanguage.value;
 
 const toggleLanguage = () => {
@@ -164,16 +171,21 @@ const toggleLanguage = () => {
   localStorage.setItem('locale', newLang);
 };
 
-import { 
-    ShoppingBag, Receipt, ShieldCheck, BarChart3, 
-    ChevronRight, Play, Globe, Check, Star, 
-    ArrowRight, Package, Truck, LayoutDashboard,
-    Instagram, Twitter, Linkedin, Github,
-    Mail, MapPin, Phone, X
-} from 'lucide-vue-next';
 const isMenuOpen = ref(false);
 const isScrolled = ref(false);
 const isVideoModalOpen = ref(false);
+
+const handleFooterLink = (item: string) => {
+  if (typeof window === 'undefined') return;
+  
+  if (item === 'Privasi' || item === 'Privacy') {
+    scrollToFeature(2);
+  } else if (item === 'Kontak' || item === 'Contact') {
+    document.getElementById('newsletter-card')?.scrollIntoView({ behavior: 'smooth' });
+  } else {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+};
 
 const openVideoModal = () => {
     isVideoModalOpen.value = true;
@@ -758,7 +770,7 @@ const plansData = computed(() => [
               <ul class="space-y-4">
                 <li v-for="item in (locale === 'id' ? ['Tentang Kami', 'Kontak', 'Privasi', 'Ketentuan'] : ['About Us', 'Contact', 'Privacy', 'Terms'])" :key="item">
                     <a href="javascript:void(0)" 
-                       @click="item === 'Privasi' || item === 'Privacy' ? scrollToFeature(2) : (item === 'Tentang Kami' || item === 'About Us' ? window.scrollTo({top: 0, behavior: 'smooth'}) : (item === 'Kontak' || item === 'Contact' ? document.getElementById('newsletter-card')?.scrollIntoView({behavior: 'smooth'}) : window.scrollTo({top: 0, behavior: 'smooth'})))"
+                       @click="handleFooterLink(item)"
                        class="text-slate-500 hover:text-white transition-colors uppercase tracking-widest text-[10px] font-black group flex items-center gap-2">
                         <span class="w-1 h-1 bg-blue-600 rounded-full scale-0 group-hover:scale-100 transition-transform"></span>
                         {{ item }}

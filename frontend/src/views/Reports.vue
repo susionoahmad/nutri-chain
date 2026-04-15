@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import api from '@/api';
 import { formatCurrency } from '@/utils/format';
 import { 
     FileBarChart, Printer, 
     TrendingUp, Wallet, ArrowRightLeft, AlertCircle,
     Loader2, Table, RefreshCcw, MessageSquare,
-    ShoppingCart, Package, Check
+    ShoppingCart, Package
 } from 'lucide-vue-next';
 import { useAuthStore } from '@/stores/auth';
 
@@ -27,11 +27,6 @@ const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
 const startDate = ref(formatDate(firstDay));
 const endDate = ref(formatDate(today));
 
-const activeTabRoute = computed(() => {
-    if (activeReport.value === 'receivables' || activeReport.value === 'debts') return 'debt-receivable';
-    if (activeReport.value === 'product-analysis') return 'product-analysis';
-    return activeReport.value;
-});
 
 const reportData = ref<any>(null);
 
