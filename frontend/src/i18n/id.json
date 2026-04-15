@@ -42,7 +42,10 @@
         "active_customers": "Pelanggan Aktif",
         "tasks_queue": "Antrean Tugas",
         "profit_analysis": "Analisis Profit Lanjut",
-        "start_order": "Mulai buat pesanan"
+        "start_order": "Mulai buat pesanan",
+        "critical_stock": "Ada {count} produk dengan stok kritis!",
+        "view_stock_report": "Lihat Laporan Stok",
+        "inventory_warning": "Stok Hampir Habis"
     },
     "menu": {
         "dashboard": "Dashboard",
@@ -142,8 +145,10 @@
         "generating": "Menghitung Data Laporan...",
         "tabs": {
             "profit_loss": "Laba Rugi",
+            "sales": "Daftar Penjualan",
             "cash": "Arus Kas",
             "stock": "Mutasi Stok",
+            "low_stock": "Stok Kritis",
             "analysis": "Analisis Produk",
             "receivables": "Laporan Piutang",
             "debts": "Laporan Hutang"

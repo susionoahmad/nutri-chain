@@ -6,109 +6,111 @@ const router = createRouter({
     routes: [
         {
             path: '/',
+            name: 'landing',
+            component: () => import('@/views/Landing.vue'),
+            meta: { public: true }, // We add this if we want it public
+        },
+        {
+            path: '/_app', // Dummy parent path
             component: () => import('@/components/MainLayout.vue'),
             meta: { requiresAuth: true },
             children: [
                 {
-                    path: '',
-                    redirect: '/dashboard'
-                },
-                {
-                    path: 'dashboard',
+                    path: '/dashboard',
                     name: 'dashboard',
                     component: () => import('@/views/Dashboard.vue'),
                 },
                 {
-                    path: 'products',
+                    path: '/products',
                     name: 'products',
                     component: () => import('@/views/Products.vue'),
                 },
                 {
-                    path: 'customers',
+                    path: '/customers',
                     name: 'customers',
                     component: () => import('@/views/Customers.vue'),
                 },
                 {
-                    path: 'orders',
+                    path: '/orders',
                     name: 'orders',
                     component: () => import('@/views/Orders.vue'),
                 },
                 {
-                    path: 'invoices',
+                    path: '/invoices',
                     name: 'invoices',
                     component: () => import('@/views/Invoices.vue'),
                 },
                 {
-                    path: 'stock-mutations',
+                    path: '/stock-mutations',
                     name: 'stock-mutations',
                     component: () => import('@/views/StockMutations.vue'),
                 },
                 {
-                    path: 'reports',
+                    path: '/reports',
                     name: 'reports',
                     component: () => import('@/views/Reports.vue'),
                 },
                 {
-                    path: 'producers',
+                    path: '/producers',
                     name: 'producers',
                     component: () => import('@/views/Producers.vue'),
                 },
                 {
-                    path: 'purchases',
+                    path: '/purchases',
                     name: 'purchases',
                     component: () => import('@/views/Purchases.vue'),
                 },
                 {
-                    path: 'cash-flow',
+                    path: '/cash-flow',
                     name: 'cash-flow',
                     component: () => import('@/views/CashFlow.vue'),
                 },
                 {
-                    path: 'users',
+                    path: '/users',
                     name: 'users',
                     component: () => import('@/views/Users.vue'),
                     meta: { role: 'owner' }
                 },
                 {
-                    path: 'settings',
+                    path: '/settings',
                     name: 'settings',
                     component: () => import('@/views/Suppliers.vue'),
                     meta: { role: 'owner' }
                 },
                 {
-                    path: 'billing',
+                    path: '/billing',
                     name: 'billing',
                     component: () => import('@/views/Billing.vue'),
                 }
             ]
         },
         {
-            path: '/saas',
+            path: '/_saas', // Dummy parent path
             component: () => import('@/components/MainLayout.vue'), // Using the same layout for now, will adapt UI in Layout
             meta: { requiresAuth: true, role: 'superadmin' },
             children: [
                 {
-                    path: 'dashboard',
+                    path: '/saas/dashboard',
                     name: 'saas-dashboard',
                     component: () => import('@/views/saas/SaasDashboard.vue'),
                 },
                 {
-                    path: 'tenants',
+                    path: '/saas/tenants',
                     name: 'saas-tenants',
                     component: () => import('@/views/saas/SaasTenants.vue'),
                 },
                 {
-                    path: 'payments',
+                    path: '/saas/payments',
                     name: 'saas-payments',
                     component: () => import('@/views/saas/SaasPayments.vue'),
                 },
                 {
-                    path: 'plans',
+                    path: '/saas/plans',
                     name: 'saas-plans',
                     component: () => import('@/views/saas/SaasPlans.vue'),
                 },
                 {
-                    path: 'settings',
+                    path: '/saas/settings',
                     name: 'saas-settings',
                     component: () => import('@/views/saas/SaasSettings.vue'),
                 }
@@ -148,6 +150,10 @@ router.beforeEach(async (to, _from, next) => {
         }
     }
 
+    if (to.name === 'landing' && auth.isAuthenticated) {
+        return next(auth.user?.role === 'superadmin' ? '/saas/dashboard' : '/dashboard');
+    }
+
     if (to.meta.requiresAuth && !auth.isAuthenticated) {
         next('/login');
     } else if (auth.isAuthenticated && !auth.isOnboarded && to.name !== 'onboarding') {
@@ -155,7 +161,7 @@ router.beforeEach(async (to, _from, next) => {
     } else if (auth.isAuthenticated && auth.isOnboarded && to.name === 'onboarding') {
         next('/');
     } else if (to.meta.guestOnly && auth.isAuthenticated) {
-        next('/');
+        next('/dashboard');
     } else if (to.meta.role && auth.user?.role !== to.meta.role) {
         // Forbidden access based on role
         next('/dashboard');

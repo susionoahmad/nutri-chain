@@ -42,7 +42,10 @@
         "active_customers": "Active Customers",
         "tasks_queue": "Tasks Queue",
         "profit_analysis": "Advanced Profit Analysis",
-        "start_order": "Start placing order"
+        "start_order": "Start placing order",
+        "critical_stock": "There are {count} products with critical stock!",
+        "view_stock_report": "View Stock Report",
+        "inventory_warning": "Stock Running Low"
     },
     "menu": {
         "dashboard": "Dashboard",
@@ -138,8 +141,10 @@
         "generating": "Calculating Report Data...",
         "tabs": {
             "profit_loss": "Profit & Loss",
+            "sales": "Sales List",
             "cash": "Cash Flow",
             "stock": "Stock Mutation",
+            "low_stock": "Critical Stock",
             "analysis": "Product Analysis",
             "receivables": "Receivables Report",
             "debts": "Debt Report"

@@ -102,6 +102,7 @@ class DashboardController extends Controller
             'total_cash_balance' => (float) $totalCashBalance,
             'unpaid_invoices' => (float) $unpaidInvoices,
             'recent_orders' => OrderResource::collection($recentOrders),
+            'low_stock' => $this->getLowStockData($supplierId),
         ]);
     }
 
@@ -144,6 +145,7 @@ class DashboardController extends Controller
             'total_profit' => 0,
             'month_profit' => 0,
             'total_cash_balance' => 0,
+            'low_stock' => $this->getLowStockData($supplierId),
         ]);
     }
 
@@ -198,6 +200,7 @@ class DashboardController extends Controller
             'orders_to_pick' => $ordersToPick,
             'total_items_to_pick' => (int) $totalItemsToPick,
             'recent_orders' => OrderResource::collection($recentQueue),
+            'low_stock' => $this->getLowStockData($supplierId),
         ]);
     }
 
@@ -224,5 +227,30 @@ class DashboardController extends Controller
             'delivered_today' => $deliveredToday,
             'recent_orders' => OrderResource::collection($recentQueue),
         ]);
+    }
+
+    private function getLowStockData($supplierId)
+    {
+        $threshold = 10;
+        $count = \Illuminate\Support\Facades\DB::table('products')
+            ->join('stocks', 'products.id', '=', 'stocks.product_id')
+            ->where('products.supplier_id', $supplierId)
+            ->where('stocks.qty', '<=', $threshold)
+            ->count();
+
+        $products = \Illuminate\Support\Facades\DB::table('products')
+            ->join('stocks', 'products.id', '=', 'stocks.product_id')
+            ->where('products.supplier_id', $supplierId)
+            ->where('stocks.qty', '<=', $threshold)
+            ->select('products.name', 'stocks.qty')
+            ->orderBy('stocks.qty', 'asc')
+            ->take(3)
+            ->get();
+
+        return [
+            'count' => $count,
+            'products' => $products,
+            'threshold' => $threshold
+        ];
     }
 }

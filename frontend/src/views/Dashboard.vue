@@ -33,7 +33,12 @@ const stats = ref({
     cash_balance_bank: 0,
     cash_balance_cash: 0,
     total_cash_balance: 0,
-    recent_orders: [] as any[]
+    recent_orders: [] as any[],
+    low_stock: {
+        count: 0,
+        products: [] as any[],
+        threshold: 10
+    }
 });
 const loading = ref(true);
 
@@ -116,6 +121,22 @@ onMounted(fetchStats);
         </div>
         <button @click="$router.push('/invoices')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all w-full md:w-auto">
             {{ $t('dashboard.open_cashflow') }} <ArrowUpRight class="w-4 h-4" />
+        </button>
+    </div>
+    <!-- Critical Stock Notification (Admin/Owner/Warehouse) -->
+    <div v-if="(stats.role === 'admin' || stats.role === 'owner' || stats.role === 'warehouse') && stats.low_stock.count > 0" 
+         class="bg-rose-500/10 border border-rose-500/30 p-6 rounded-[32px] flex flex-col md:flex-row items-center justify-between gap-6 shadow-lg shadow-rose-500/5 animate-in slide-in-from-top-4">
+        <div class="flex items-center gap-5 text-rose-400">
+            <div class="w-14 h-14 bg-rose-500/20 rounded-2xl flex items-center justify-center animate-pulse border border-rose-500/20">
+                <Package class="w-7 h-7" />
+            </div>
+            <div>
+                <h3 class="text-xl font-black tracking-tight text-white mb-0.5 uppercase italic">{{ $t('dashboard.inventory_warning') }}</h3>
+                <p class="text-xs font-bold text-rose-400 uppercase tracking-widest">{{ $t('dashboard.critical_stock', { count: stats.low_stock.count }) }}</p>
+            </div>
+        </div>
+        <button @click="$router.push('/reports')" class="bg-rose-600 hover:bg-rose-500 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-xl shadow-rose-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all w-full md:w-auto">
+            {{ $t('dashboard.view_stock_report') }} <ArrowUpRight class="w-4 h-4" />
         </button>
     </div>
 
@@ -347,18 +368,31 @@ onMounted(fetchStats);
                 </div>
 
                 <!-- Inventory Widget for Owner/Admin Only -->
-                <div v-if="!stats.role || stats.role === 'admin' || stats.role === 'owner'" class="bg-white/5 border border-white/10 p-8 rounded-[32px]">
+                <div v-if="!stats.role || stats.role === 'admin' || stats.role === 'owner' || stats.role === 'warehouse'" class="bg-white/5 border border-white/10 p-8 rounded-[32px]">
                     <h4 class="font-bold text-white mb-4">{{ t('dashboard.inventory_health') }}</h4>
                     <div class="space-y-4">
                         <div class="flex justify-between items-center text-sm">
-                            <span class="text-slate-400">Inventory Status</span>
-                            <span class="text-emerald-400 font-bold">{{ t('dashboard.good') }}</span>
+                            <span class="text-slate-400">Status Stok</span>
+                            <span v-if="stats.low_stock.count > 0" class="text-rose-400 font-bold uppercase tracking-widest text-[10px]">{{ stats.low_stock.count }} Item Kritis</span>
+                            <span v-else class="text-emerald-400 font-bold tracking-widest text-[10px] uppercase italic">{{ t('dashboard.good') }}</span>
                         </div>
                         <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                            <div class="bg-blue-500 h-full w-[85%]"></div>
+                            <div 
+                                :class="stats.low_stock.count > 0 ? 'bg-rose-500' : 'bg-emerald-500'" 
+                                class="h-full transition-all duration-1000"
+                                :style="{ width: stats.low_stock.count > 0 ? '40%' : '100%' }"
+                            ></div>
                         </div>
+                        
+                        <div v-if="stats.low_stock.count > 0" class="space-y-2 mt-4 pt-4 border-t border-white/5">
+                            <div v-for="p in stats.low_stock.products" :key="p.name" class="flex justify-between items-center bg-white/[0.02] p-2 rounded-lg">
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[120px]">{{ p.name }}</span>
+                                <span class="text-[10px] font-black text-rose-500 font-mono">{{ p.qty }}</span>
+                            </div>
+                        </div>
+
                         <p class="text-[10px] text-slate-500 leading-relaxed font-medium">
-                            Based on your latest records, most items are above safety stock levels.
+                            {{ stats.low_stock.count > 0 ? 'Segera lakukan restock untuk produk kritis di atas.' : 'Seluruh stok produk Anda saat ini dalam kondisi aman.' }}
                         </p>
                     </div>
                 </div>

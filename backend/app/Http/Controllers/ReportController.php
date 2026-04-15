@@ -222,4 +222,46 @@ class ReportController extends Controller
             'period' => ['start' => $start, 'end' => $end]
         ]);
     }
+
+    public function getSalesReport(Request $request)
+    {
+        $start = $request->start_date;
+        $end = $request->end_date;
+        $supplier_id = $request->user()->supplier_id;
+
+        $query = Order::with('customer')
+            ->where('supplier_id', $supplier_id)
+            ->where('status', 'delivered');
+
+        if ($start && $end) {
+            $query->whereBetween('order_date', [$start, $end]);
+        }
+
+        $sales = $query->orderBy('order_date', 'desc')->get();
+
+        return response()->json([
+            'sales' => $sales,
+            'total_revenue' => (float)$sales->sum('total_amount'),
+            'total_count' => $sales->count()
+        ]);
+    }
+
+    public function getLowStockReport(Request $request)
+    {
+        $supplier_id = $request->user()->supplier_id;
+        $threshold = $request->threshold ?? 10;
+
+        $lowStockProducts = DB::table('products')
+            ->join('stocks', 'products.id', '=', 'stocks.product_id')
+            ->where('products.supplier_id', $supplier_id)
+            ->where('stocks.qty', '<=', $threshold)
+            ->select('products.name', 'products.category', 'products.unit', 'stocks.qty as current_stock')
+            ->orderBy('stocks.qty', 'asc')
+            ->get();
+
+        return response()->json([
+            'products' => $lowStockProducts,
+            'threshold' => (int)$threshold
+        ]);
+    }
 }

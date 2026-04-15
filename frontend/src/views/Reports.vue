@@ -5,7 +5,8 @@ import { formatCurrency } from '@/utils/format';
 import { 
     FileBarChart, Printer, 
     TrendingUp, Wallet, ArrowRightLeft, AlertCircle,
-    Loader2, Table, RefreshCcw, MessageSquare
+    Loader2, Table, RefreshCcw, MessageSquare,
+    ShoppingCart, Package, Check
 } from 'lucide-vue-next';
 import { useAuthStore } from '@/stores/auth';
 
@@ -13,8 +14,18 @@ const auth = useAuthStore();
 
 const loading = ref(false);
 const activeReport = ref(auth.user?.role === 'owner' ? 'profit-loss' : 'cash'); // profit-loss, cash, stock, receivables, debts
-const startDate = ref(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
-const endDate = ref(new Date().toISOString().split('T')[0]);
+const formatDate = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+const today = new Date();
+const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+
+const startDate = ref(formatDate(firstDay));
+const endDate = ref(formatDate(today));
 
 const activeTabRoute = computed(() => {
     if (activeReport.value === 'receivables' || activeReport.value === 'debts') return 'debt-receivable';
@@ -28,7 +39,17 @@ const fetchReport = async () => {
     loading.value = true;
     reportData.value = null;
     try {
-        const response = await api.get(`/reports/${activeTabRoute.value}`, {
+        const routeMapping: Record<string, string> = {
+            'profit-loss': 'profit-loss',
+            'cash': 'cash',
+            'stock': 'stock',
+            'product-analysis': 'product-analysis',
+            'receivables': 'debt-receivable',
+            'debts': 'debt-receivable',
+            'sales': 'sales',
+            'low-stock': 'low-stock'
+        };
+        const response = await api.get(`/reports/${routeMapping[activeReport.value]}`, {
             params: { start_date: startDate.value, end_date: endDate.value }
         });
         reportData.value = response.data;
@@ -75,6 +96,16 @@ const exportToExcel = () => {
         csvContent += "Kategori,Produk,Terjual,Omzet,Profit\n";
         reportData.value.products.forEach((row: any) => {
             csvContent += `${row.category || 'Uncategorized'},${row.name},${parseInt(row.total_qty)},${row.revenue},${row.gross_profit}\n`;
+        });
+    } else if (activeReport.value === 'sales') {
+        csvContent += "Tanggal,No. Pesanan,Customer,Total\n";
+        reportData.value.sales.forEach((row: any) => {
+            csvContent += `${row.order_date},${row.order_number},${row.customer?.name || 'N/A'},${row.total_amount}\n`;
+        });
+    } else if (activeReport.value === 'low-stock') {
+        csvContent += "Produk,Kategori,Stok Saat Ini,Satuan\n";
+        reportData.value.products.forEach((row: any) => {
+            csvContent += `${row.name},${row.category || 'N/A'},${row.current_stock},${row.unit}\n`;
         });
     }
 
@@ -128,8 +159,10 @@ onMounted(fetchReport);
     <div class="flex flex-wrap gap-3 print:hidden">
         <button v-for="tab in [
             { id: 'profit-loss', label: $t('reports.tabs.profit_loss'), icon: TrendingUp, roles: ['owner'] },
+            { id: 'sales', label: $t('reports.tabs.sales'), icon: ShoppingCart, roles: ['owner', 'admin'] },
             { id: 'cash', label: $t('reports.tabs.cash'), icon: Wallet, roles: ['owner', 'admin'] },
             { id: 'stock', label: $t('reports.tabs.stock'), icon: ArrowRightLeft, roles: ['owner', 'admin'] },
+            { id: 'low-stock', label: $t('reports.tabs.low_stock'), icon: Package, roles: ['owner', 'admin'] },
             { id: 'product-analysis', label: $t('reports.tabs.analysis'), icon: Table, roles: ['owner', 'admin'] },
             { id: 'receivables', label: $t('reports.tabs.receivables'), icon: AlertCircle, roles: ['owner', 'admin'] },
             { id: 'debts', label: $t('reports.tabs.debts'), icon: AlertCircle, roles: ['owner', 'admin'] }
@@ -394,6 +427,81 @@ onMounted(fetchReport);
             </div>
         </div>
 
+        <!-- 7. SALES LIST -->
+        <div v-if="activeReport === 'sales'" class="space-y-8 animate-in fade-in duration-500">
+            <div class="grid grid-cols-2 gap-6 mb-12">
+                <div class="border-2 border-slate-900 p-8 rounded-3xl text-center">
+                    <p class="text-[10px] font-black text-slate-400 uppercase mb-2">Total Transaksi</p>
+                    <p class="text-4xl font-black font-mono tracking-tighter">{{ reportData.total_count }}</p>
+                </div>
+                <div class="border-2 border-slate-900 p-8 rounded-3xl text-center bg-slate-900 text-white">
+                    <p class="text-[10px] font-black text-slate-400 uppercase mb-2">Total Omzet Penjualan</p>
+                    <p class="text-4xl font-black font-mono tracking-tighter">{{ formatCurrency(reportData.total_revenue) }}</p>
+                </div>
+            </div>
+            <table class="w-full text-sm">
+                <thead class="border-y-2 border-slate-900 font-black uppercase text-[10px] tracking-widest">
+                    <tr>
+                        <th class="py-4 px-2 text-left">Tanggal</th>
+                        <th class="py-4 px-2 text-left">No. Pesanan</th>
+                        <th class="py-4 px-2 text-left">Customer</th>
+                        <th class="py-4 px-2 text-right">Total</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    <tr v-for="order in reportData.sales" :key="order.id">
+                        <td class="py-4 px-2 font-mono text-[11px]">{{ order.order_date }}</td>
+                        <td class="py-4 px-2 font-bold">{{ order.order_number }}</td>
+                        <td class="py-4 px-2 uppercase font-black text-[10px]">{{ order.customer?.name || 'N/A' }}</td>
+                        <td class="py-4 px-2 text-right font-mono font-bold">{{ formatCurrency(order.total_amount) }}</td>
+                    </tr>
+                    <tr v-if="reportData.sales.length === 0">
+                        <td colspan="4" class="py-12 text-center text-slate-400 italic">Tidak ada data penjualan pada periode ini.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 8. LOW STOCK REPORT -->
+        <div v-if="activeReport === 'low-stock'" class="space-y-8 animate-in fade-in duration-500">
+            <div class="bg-amber-50 p-10 rounded-[40px] border-4 border-amber-100 flex justify-between items-center mb-8">
+                <div>
+                    <h3 class="text-3xl font-black text-slate-900 uppercase">Perhatian: Stok Kritis</h3>
+                    <p class="text-amber-700 font-bold uppercase tracking-widest text-xs mt-2">Daftar produk dengan stok di bawah {{ reportData.threshold }} unit</p>
+                </div>
+                <AlertCircle class="text-amber-200 w-24 h-24" />
+            </div>
+
+            <table class="w-full text-sm">
+                <thead class="border-y-2 border-slate-900 font-black uppercase text-[10px] tracking-widest">
+                    <tr>
+                        <th class="py-4 px-2 text-left">Produk</th>
+                        <th class="py-4 px-2 text-left">Kategori</th>
+                        <th class="py-4 px-2 text-center">Stok Saat Ini</th>
+                        <th class="py-4 px-2 text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    <tr v-for="p in reportData.products" :key="p.name">
+                        <td class="py-4 px-2 font-bold uppercase italic">{{ p.name }}</td>
+                        <td class="py-4 px-2">
+                            <span class="px-3 py-1 bg-slate-100 rounded-full text-[9px] font-black uppercase text-slate-500">{{ p.category || 'N/A' }}</span>
+                        </td>
+                        <td class="py-4 px-2 text-center font-black font-mono text-xl" :class="p.current_stock <= (reportData.threshold / 2) ? 'text-rose-600' : 'text-amber-600'">
+                            {{ p.current_stock }} {{ p.unit }}
+                        </td>
+                        <td class="py-4 px-2 text-center">
+                            <span v-if="p.current_stock <= 0" class="bg-rose-600 text-white text-[9px] font-black px-4 py-1 rounded-full uppercase">Habis</span>
+                            <span v-else class="bg-amber-600 text-white text-[9px] font-black px-4 py-1 rounded-full uppercase italic">Kritis</span>
+                        </td>
+                    </tr>
+                    <tr v-if="reportData.products.length === 0">
+                        <td colspan="4" class="py-12 text-center text-emerald-600 italic font-bold">Semua stok dalam kondisi aman.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
         <!-- Signature/Footer -->
         <div class="mt-24 pt-12 border-t border-slate-200 flex justify-between italic text-slate-400 text-[10px]">
           <p>Dicetak pada: {{ new Date().toLocaleString() }}</p>
@@ -405,18 +513,34 @@ onMounted(fetchReport);
 
 <style scoped>
 @media print {
+    /* Remove browser headers and footers */
+    @page { 
+        margin: 0; 
+        size: auto;
+    }
+
     body * { visibility: hidden; }
     #report-content, #report-content * { visibility: visible; }
+    
     #report-content {
         position: absolute;
         left: 0;
         top: 0;
         width: 100%;
-        margin: 0;
-        padding: 0;
-        box-shadow: none;
-        border: none;
+        margin: 0 !important;
+        padding: 20mm !important; /* Professional PDF margin */
+        box-shadow: none !important;
+        border: none !important;
+        background: white !important;
+        color: black !important;
     }
+
     .print\:hidden { display: none !important; }
+    
+    /* Ensure colors and backgrounds print correctly */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
 }
 </style>

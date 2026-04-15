@@ -98,6 +98,8 @@ Route::middleware(['auth:sanctum', 'saas_active'])->group(function () {
         Route::get('/reports/stock', [ReportController::class, 'getStockReport']);
         Route::get('/reports/debt-receivable', [ReportController::class, 'getDebtReceivable']);
         Route::get('/reports/product-analysis', [ReportController::class, 'getProductAnalysis']);
+        Route::get('/reports/sales', [ReportController::class, 'getSalesReport']);
+        Route::get('/reports/low-stock', [ReportController::class, 'getLowStockReport']);
     });
 
     // --- SAAS SUPERADMIN MODULE (URL KHUSUS) ---
